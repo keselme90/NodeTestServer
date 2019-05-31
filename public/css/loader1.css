@@ -1,0 +1,52 @@
+.loader{
+    height: 50px;
+    /* animation: rotate 6s linear infinite; */
+
+}
+
+.circle{
+    display: inline-block;
+    background-color: purple;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    transform: scale(0);
+    animation: grow 1.5s linear infinite;
+    margin: 20px;
+}
+
+.circle:nth-child(2){
+    background-color: palevioletred;
+    transform: scale(0);
+    animation-delay: 0.20s;
+}
+
+.circle:nth-child(3){
+    background-color: chartreuse;
+    transform: scale(0);
+    animation-delay: 0.40s;
+}
+
+.circle:nth-child(4){
+    background-color: dodgerblue;
+    transform: scale(0);
+    animation-delay: 0.60s;
+}
+
+.circle:nth-child(5){
+    background-color: darkorange;
+    transform: scale(0);
+    animation-delay: 0.80;
+}
+
+@keyframes rotate{
+    /* to{
+        transform: rotate(-360deg)
+    } */
+}
+
+@keyframes grow{
+    50%{
+        transform: scale(1);
+    }
+}
