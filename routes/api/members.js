@@ -2,73 +2,131 @@ const express = require('express')
 const members = require('../../Members.js')
 const uuid = require('uuid')
 const router = express.Router()
+const MongoClient = require('mongodb').MongoClient;
+const objectId = require('mongodb').ObjectID
+const uri =  process.env.mongo_connection_string
+
 
 // Gets all members
-router.get('/', (req,res) => res.json(members))
+router.get('/', (req,res) => {
+
+    
+    var response = []
+
+    const client = new MongoClient(uri, { useNewUrlParser: true });
+    client.connect(err => {
+        
+        if(err){
+            console.log(err)
+            return res.status(500).json({msg:"Error occured while trying to connect to database", error: err})
+        }
+
+        const collection = client.db("first-test").collection("members").find({})
+        
+        // perform actions on the collection objec
+        collection.forEach( member => {
+
+            response.push(member)
+
+        }, () => {
+            //After pushing all the data into response array, return it.
+            client.close();
+            return res.status(200).json(response)
+        })
+       
+    });
+})
 
 // Get single member
 router.get('/:id',(req, res) => {
 
-    const found = members.some(memmber => memmber.id === parseInt(req.params.id))
-    if(found)
-        res.json(members.filter(elem => elem.id === parseInt(req.params.id)))
-    else
-        res.status(400).json({messgae: `No member with id ${req.params.id}`})
+    const client = new MongoClient(uri, { useNewUrlParser: true });
+    client.connect(err => {
+
+        if(err){
+            console.log(err)
+            res.status(500).json({msg:"Error while trying to connect to data base", error: err})
+        }
+        const collection = client.db("first-test").collection("members").findOne({"_id": objectId(req.params.id)}, (err, result) =>{
+            if (err) throw err
+            console.log(result.name)
+            client.close()
+            return res.status(200).json(result)
+        })
+    })
 }) 
 
 // Add member
 router.post('/', (req, res) => {
 
-    //Simply returns the received data back to the sende
+    //Simply returns the received data back to the sender
     //res.send(req.body)
 
     const newMember = {
-         id: uuid.v4(),
          name: req.body.name,
          email: req.body.email,
-         status: 'active'
+         status: 'active',
+         age: 72
     }
 
-    if( !newMember.name || !newMember.email)
-       return res.status(400).json({msg: "Please include name and email"})
-    
-    members.push(newMember)
-    res.status(200).json(members)
+    const client = new MongoClient(uri, { useNewUrlParser: true });
+    client.connect(err => {
+
+        if(err){
+            console.log(err)
+            res.status(500).json({msg:"Error while trying to connect to data base", error: err})
+        }
+        const collection = client.db("first-test").collection("members").insertOne(newMember, (err, result) =>{
+            if (err) throw err
+            console.log(result.name)
+            client.close()
+            res.redirect('/api/members')
+        })
+    })
 })
 
 // Update member
 router.put('/:id', (req, res) =>{
-
-    // check if the requested id exsits in our data
-    const found = members.some(memmber => memmber.id === parseInt.req.params.id)
-    if (!found)
-        return res.status(400).json({msg:`There is now user with id ${parseInt(req.params.id)}`})
     
-    const updatedMember = req.body
+    const client = new MongoClient(uri, { useNewUrlParser: true });
 
-    members.forEach(memmber => {
+    const member = {
+        name: req.body.name,
+        email: req.body.email,
+        status: req.body.status,
+        age: req.body.age
+    }
 
-        if(memmber.id === updatedMember.id){
-            memmber.name = updatedMember.name
-            memmber.email = updatedMember.email
-            memmber.status = updatedMember.status
+    client.connect(err => {
 
-            return res.status(200).json(members)
+        if(err){
+            console.log(err)
+            res.status(500).json({msg:"Error while trying to connect to data base", error: err})
         }
+        const collection = client.db("first-test").collection("members").updateOne({"_id":objectId(req.params.id)}, {$set: member}, (err, result) =>{
+            if (err) throw err
+            client.close()
+            res.redirect('/api/members')
+        })
     })
-
-    
 })
 
 // Delete member
 router.delete('/:id', (req, res) => {
 
-    const found = members.some(member => member.id === parseInt(req.body.id))
-    if(found)
-        return res.status(200).json({msg:`Member deleted`, members: members.filter(member =>{
-            member.id !== parseInt(req.body.id)})})
-    
-    res.status(400).json({msg:`Member with id ${req.body.id} doesn't exists` })
+    const client = new MongoClient(uri, { useNewUrlParser: true });
+    client.connect(err => {
+
+        if(err){
+            console.log(err)
+            res.status(500).json({msg:"Error while trying to connect to data base", error: err})
+        }
+        const collection = client.db("first-test").collection("members").deleteOne({"_id":objectId(req.params.id)}, (err, result) =>{
+            if (err) throw err
+            client.close()
+            res.redirect('/api/members')
+        })
+    })
 })
 
 module.exports = router
